@@ -1,0 +1,748 @@
+{
+  "users": [
+    {
+      "userId": "user_001",
+      "email": "admin@pucket.com",
+      "passwordHash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_102c0b4c626f9f20",
+      "email": "d@gmail.com",
+      "passwordHash": "7e071fd9b023ed8f18458a73613a0834f6220bd5cc50357ba3493c6040a9ea8c",
+      "createdAt": "2025-10-26T01:49:49.767Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_546f04d67b4f990f",
+      "email": "dn@gmail.com",
+      "passwordHash": "7e071fd9b023ed8f18458a73613a0834f6220bd5cc50357ba3493c6040a9ea8c",
+      "createdAt": "2025-10-26T02:18:57.649Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_a225d543806ed09a",
+      "email": "dna@gmail.com",
+      "passwordHash": "7e071fd9b023ed8f18458a73613a0834f6220bd5cc50357ba3493c6040a9ea8c",
+      "createdAt": "2025-10-26T02:20:41.177Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_46e991d64065f755",
+      "email": "j@gmail.com",
+      "passwordHash": "7e071fd9b023ed8f18458a73613a0834f6220bd5cc50357ba3493c6040a9ea8c",
+      "createdAt": "2025-10-26T02:24:25.756Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_252f70879a9d30ec",
+      "email": "kk@gmail.com",
+      "passwordHash": "7e071fd9b023ed8f18458a73613a0834f6220bd5cc50357ba3493c6040a9ea8c",
+      "createdAt": "2025-10-26T02:35:35.665Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_373edb171ca7bd9a",
+      "email": "ksk@gmail.com",
+      "passwordHash": "7e071fd9b023ed8f18458a73613a0834f6220bd5cc50357ba3493c6040a9ea8c",
+      "createdAt": "2025-10-26T02:36:39.388Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_fad7ab2070406b79",
+      "email": "ksks@gmail.com",
+      "passwordHash": "7e071fd9b023ed8f18458a73613a0834f6220bd5cc50357ba3493c6040a9ea8c",
+      "createdAt": "2025-10-26T02:38:27.618Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_6ad0c4e4cc2011aa",
+      "email": "jesus@gmail.com",
+      "passwordHash": "7e071fd9b023ed8f18458a73613a0834f6220bd5cc50357ba3493c6040a9ea8c",
+      "createdAt": "2025-10-26T02:41:07.903Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_f5014ee0da1f66de",
+      "email": "v@gmail.com",
+      "passwordHash": "7e071fd9b023ed8f18458a73613a0834f6220bd5cc50357ba3493c6040a9ea8c",
+      "createdAt": "2025-10-26T02:45:00.867Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_c00c1817a1d900dc",
+      "email": "vani@gmail.com",
+      "passwordHash": "7e071fd9b023ed8f18458a73613a0834f6220bd5cc50357ba3493c6040a9ea8c",
+      "createdAt": "2025-10-26T02:52:39.256Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_ab55856bc056e761",
+      "email": "john@gmail.com",
+      "passwordHash": "ee79976c9380d5e337fc1c095ece8c8f22f91f306ceeb161fa51fecede2c4ba1",
+      "createdAt": "2025-10-26T02:59:47.445Z",
+      "biometric": null,
+      "updatedAt": "2025-10-26T03:31:19.700Z"
+    },
+    {
+      "userId": "user_cd7d77789c5cae40",
+      "email": "papdinero@gmail.com",
+      "passwordHash": "33a7d3da476a32ac237b3f603a1be62fad00299e0d4b5a8db8d913104edec629",
+      "createdAt": "2025-10-26T03:35:05.231Z",
+      "biometric": null,
+      "updatedAt": "2025-10-26T04:16:14.518Z"
+    },
+    {
+      "userId": "user_a143650351365aed",
+      "email": "xcvz@gmail.com",
+      "passwordHash": "ee79976c9380d5e337fc1c095ece8c8f22f91f306ceeb161fa51fecede2c4ba1",
+      "createdAt": "2025-10-31T00:22:19.655Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_07fa9a92a0d3958c",
+      "email": "ddgg@gmail.com",
+      "passwordHash": "ee79976c9380d5e337fc1c095ece8c8f22f91f306ceeb161fa51fecede2c4ba1",
+      "createdAt": "2025-10-31T01:33:45.052Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_479570a3c7bd5a94",
+      "email": "jjjjj@gmail.com",
+      "passwordHash": "afb47e00531153e93808589e43d02c11f6398c5bc877f7924cebca8211c8dd18",
+      "createdAt": "2025-10-31T02:34:27.779Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_679dcdbe653f020e",
+      "passwordHash": "102caa27a3933847bae090e9ecba0baa6d28faacc02036d6290ac6d8b9e4c674",
+      "createdAt": "2025-10-31T18:03:50.537Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_f953b1960c51a6b5",
+      "passwordHash": "102caa27a3933847bae090e9ecba0baa6d28faacc02036d6290ac6d8b9e4c674",
+      "createdAt": "2025-10-31T18:04:38.420Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_a66e0659dcbeb045",
+      "passwordHash": "91b4d142823f7d20c5f08df69122de43f35f057a988d9619f6d3138485c9a203",
+      "createdAt": "2025-10-31T20:10:33.886Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_e9b276a0d0070269",
+      "passwordHash": "3ea87a56da3844b420ec2925ae922bc731ec16a4fc44dcbeafdad49b0e61d39c",
+      "createdAt": "2025-10-31T23:18:05.797Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_1c5d83199209e613",
+      "passwordHash": "3ea87a56da3844b420ec2925ae922bc731ec16a4fc44dcbeafdad49b0e61d39c",
+      "createdAt": "2025-11-03T23:23:59.120Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_6371da0c4b846f47",
+      "passwordHash": "3ea87a56da3844b420ec2925ae922bc731ec16a4fc44dcbeafdad49b0e61d39c",
+      "createdAt": "2025-11-03T23:26:20.693Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_de9ed0ee0c8dc9b4",
+      "passwordHash": "3ea87a56da3844b420ec2925ae922bc731ec16a4fc44dcbeafdad49b0e61d39c",
+      "createdAt": "2025-11-03T23:26:29.828Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_a3f16a778ec67b6f",
+      "passwordHash": "d931a74fe3bb28deee7f370e404c97740113e325b75c41335fe7798fbbbb67cc",
+      "createdAt": "2025-11-04T00:46:03.831Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_25f95ef4db86f7ad",
+      "passwordHash": "bcb15f821479b4d5772bd0ca866c00ad5f926e3580720659cc80d39c9d09802a",
+      "createdAt": "2025-11-04T03:07:35.634Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_cdce7a1a3e174f73",
+      "passwordHash": "bcb15f821479b4d5772bd0ca866c00ad5f926e3580720659cc80d39c9d09802a",
+      "createdAt": "2025-11-04T03:43:46.210Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_437e89f94f7f4178",
+      "passwordHash": "d931a74fe3bb28deee7f370e404c97740113e325b75c41335fe7798fbbbb67cc",
+      "createdAt": "2025-11-04T04:04:13.576Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_482f4831c27fdeb8",
+      "email": null,
+      "phone": null,
+      "createdAt": "2025-11-04T16:58:06.729Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_27dcd1fe646d2bff",
+      "email": null,
+      "phone": null,
+      "createdAt": "2025-11-05T19:07:42.475Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_4db4e28f75f5e7f2",
+      "email": null,
+      "phone": null,
+      "createdAt": "2025-11-05T19:13:24.338Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_492fd4c316a48b46",
+      "email": null,
+      "phone": null,
+      "createdAt": "2025-11-06T22:47:44.558Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_499ecc0df7f5b946",
+      "email": null,
+      "phone": null,
+      "createdAt": "2025-11-07T04:14:42.788Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_24b746daf7959fc1",
+      "email": null,
+      "phone": null,
+      "createdAt": "2025-11-07T04:35:44.420Z",
+      "biometric": null
+    },
+    {
+      "userId": "user_18af7417a4446a3d",
+      "email": null,
+      "phone": null,
+      "createdAt": "2025-11-07T16:49:46.543Z",
+      "biometric": null
+    }
+  ],
+  "kyc": [
+    {
+      "userId": "user_001",
+      "status": "approved",
+      "idType": "passport",
+      "region": "Nigeria",
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "userId": "user_102c0b4c626f9f20",
+      "status": "not_started",
+      "idType": null,
+      "region": null,
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": null,
+      "updatedAt": "2025-10-26T01:49:49.768Z"
+    },
+    {
+      "userId": "user_546f04d67b4f990f",
+      "status": "not_started",
+      "idType": null,
+      "region": null,
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": null,
+      "updatedAt": "2025-10-26T02:18:57.650Z"
+    },
+    {
+      "userId": "user_a225d543806ed09a",
+      "status": "not_started",
+      "idType": null,
+      "region": null,
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": null,
+      "updatedAt": "2025-10-26T02:20:41.181Z"
+    },
+    {
+      "userId": "user_46e991d64065f755",
+      "status": "not_started",
+      "idType": null,
+      "region": null,
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": null,
+      "updatedAt": "2025-10-26T02:24:25.757Z"
+    },
+    {
+      "userId": "user_252f70879a9d30ec",
+      "status": "not_started",
+      "idType": null,
+      "region": null,
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": null,
+      "updatedAt": "2025-10-26T02:35:35.666Z"
+    },
+    {
+      "userId": "user_373edb171ca7bd9a",
+      "status": "not_started",
+      "idType": null,
+      "region": null,
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": null,
+      "updatedAt": "2025-10-26T02:36:39.389Z"
+    },
+    {
+      "userId": "user_fad7ab2070406b79",
+      "status": "not_started",
+      "idType": null,
+      "region": null,
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": null,
+      "updatedAt": "2025-10-26T02:38:27.618Z"
+    },
+    {
+      "userId": "user_6ad0c4e4cc2011aa",
+      "status": "pending",
+      "idType": "passport",
+      "region": "Nigeria",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/0f892e0c-7e7f-434c-9418-56dd4e254d45.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-10-26T02:41:35.326Z",
+      "updatedAt": "2025-10-26T02:41:35.328Z"
+    },
+    {
+      "userId": "user_f5014ee0da1f66de",
+      "status": "pending",
+      "idType": "passport",
+      "region": "Nigeria",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/91de3e89-b26e-4208-a45d-5ab2955e0124.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-10-26T02:45:24.168Z",
+      "updatedAt": "2025-10-26T02:45:24.170Z"
+    },
+    {
+      "userId": "user_c00c1817a1d900dc",
+      "status": "not_started",
+      "idType": null,
+      "region": null,
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": null,
+      "updatedAt": "2025-10-26T02:52:39.257Z"
+    },
+    {
+      "userId": "user_ab55856bc056e761",
+      "status": "approved",
+      "idType": "drivers-license",
+      "region": "United States",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/bceef56e-1d76-4734-8fbc-26878c6542bf.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-10-26T03:00:06.158Z",
+      "updatedAt": "2025-10-26T03:00:06.159Z"
+    },
+    {
+      "userId": "user_cd7d77789c5cae40",
+      "status": "approved",
+      "idType": "drivers-license",
+      "region": "Canada",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/b86bd7b8-ceca-48a2-897d-3c70c46caa69.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-10-26T03:35:19.244Z",
+      "updatedAt": "2025-10-26T03:35:19.245Z"
+    },
+    {
+      "userId": "user_a143650351365aed",
+      "status": "not_started",
+      "idType": null,
+      "region": null,
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": null,
+      "updatedAt": "2025-10-31T00:22:19.660Z"
+    },
+    {
+      "userId": "user_07fa9a92a0d3958c",
+      "status": "pending",
+      "idType": "passport",
+      "region": "Nigeria",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/ff41fb18-fded-4149-a20b-2e42923019e4.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-10-31T01:34:41.961Z",
+      "updatedAt": "2025-10-31T01:34:41.963Z"
+    },
+    {
+      "userId": "user_479570a3c7bd5a94",
+      "status": "pending",
+      "idType": "passport",
+      "region": "Nigeria",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/ec3182ac-3f1e-4498-b6a6-c6b66a0025cb.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-10-31T02:36:14.559Z",
+      "updatedAt": "2025-10-31T02:36:14.560Z"
+    },
+    {
+      "userId": "user_679dcdbe653f020e",
+      "status": "pending",
+      "idType": null,
+      "region": null,
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": null,
+      "updatedAt": "2025-10-31T18:03:50.550Z"
+    },
+    {
+      "userId": "user_f953b1960c51a6b5",
+      "status": "approved",
+      "idType": "drivers-license",
+      "region": "United States",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/b86bd7b8-ceca-48a2-897d-3c70c46caa69.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-10-31T18:04:38.425Z",
+      "updatedAt": "2025-10-31T18:04:38.425Z"
+    },
+    {
+      "userId": "user_a66e0659dcbeb045",
+      "status": "approved",
+      "idType": "passport",
+      "region": "Nigeria",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/cb0fa172-a9b8-4fdd-a3a7-2334c8a4152a.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-10-31T20:10:43.735Z",
+      "updatedAt": "2025-10-31T20:10:43.738Z"
+    },
+    {
+      "userId": "user_e9b276a0d0070269",
+      "status": "pending",
+      "idType": "passport",
+      "region": "Nigeria",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/8c5005cf-a38b-4146-989c-1fbb6c0c1d89.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-10-31T23:18:15.847Z",
+      "updatedAt": "2025-10-31T23:18:15.849Z"
+    },
+    {
+      "userId": "user_1c5d83199209e613",
+      "status": "not_started",
+      "idType": null,
+      "region": null,
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": null,
+      "updatedAt": "2025-11-03T23:23:59.121Z"
+    },
+    {
+      "userId": "user_6371da0c4b846f47",
+      "status": "not_started",
+      "idType": null,
+      "region": null,
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": null,
+      "updatedAt": "2025-11-03T23:26:20.696Z"
+    },
+    {
+      "userId": "user_de9ed0ee0c8dc9b4",
+      "status": "pending",
+      "idType": "passport",
+      "region": "{\"id\":\"ng\",\"name\":\"Nigeria\",\"flag\":\"nigeria\"}",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/1f851d18-2727-45fa-bc36-79a2c47c8b8f.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-11-03T23:27:36.629Z",
+      "updatedAt": "2025-11-03T23:28:30.054Z",
+      "personalInfo": {
+        "firstName": "D",
+        "lastName": "L",
+        "address": "Ka",
+        "city": "Go",
+        "country": "Ja",
+        "nationality": "Ec",
+        "mobileNumber": "+123467978495",
+        "dateOfBirth": "1231/33/1223",
+        "gender": "Male",
+        "bankAccountNumber": "000000000000000",
+        "bankName": "Qqqq",
+        "bankRoutingNumber": "000000000000000"
+      },
+      "profileImage": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/aeef3487-f009-476d-bcfa-79dd1b306609.jpeg"
+    },
+    {
+      "userId": "user_a3f16a778ec67b6f",
+      "status": "pending",
+      "idType": "passport",
+      "region": "{\"id\":\"ng\",\"name\":\"Nigeria\",\"flag\":\"nigeria\"}",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/d06ac304-c113-4972-b720-ed9b6f6116e7.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-11-04T00:47:16.545Z",
+      "updatedAt": "2025-11-04T00:47:16.549Z",
+      "personalInfo": {
+        "firstName": "Djk",
+        "lastName": "Kjd",
+        "address": "Jali",
+        "city": "Mali",
+        "country": "Pali",
+        "nationality": "Kali",
+        "mobileNumber": "+124536125874",
+        "dateOfBirth": "1000/10/20",
+        "gender": "Male",
+        "bankAccountNumber": "3124576187518",
+        "bankName": "Kali",
+        "bankRoutingNumber": "9164618431046"
+      }
+    },
+    {
+      "userId": "user_25f95ef4db86f7ad",
+      "status": "pending",
+      "idType": "id-card",
+      "region": "{\"id\":\"uk\",\"name\":\"United Kingdom\",\"flag\":\"uk\"}",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/ca07bf19-6822-4d6d-8bf4-9db165424e5e.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-11-04T03:10:00.006Z",
+      "updatedAt": "2025-11-04T03:10:00.036Z",
+      "personalInfo": {
+        "firstName": "Pedro",
+        "lastName": "Ramon",
+        "address": "Florida",
+        "city": "Miami",
+        "country": "Costa Rica",
+        "nationality": "American",
+        "mobileNumber": "+1 234 567 1000",
+        "dateOfBirth": "2000/01/11",
+        "gender": "Male",
+        "bankAccountNumber": "012345678910",
+        "bankName": "London Bank",
+        "bankRoutingNumber": "012345678910"
+      }
+    },
+    {
+      "userId": "user_cdce7a1a3e174f73",
+      "status": "not_started",
+      "idType": null,
+      "region": null,
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": null,
+      "updatedAt": "2025-11-04T03:43:46.252Z"
+    },
+    {
+      "userId": "user_437e89f94f7f4178",
+      "status": "pending",
+      "idType": "drivers-license",
+      "region": "{\"id\":\"us\",\"name\":\"United States\",\"flag\":\"us\"}",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/ba39f70d-dc0a-44cd-975d-13be62d3853b.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-11-04T04:06:04.313Z",
+      "updatedAt": "2025-11-04T04:06:04.325Z",
+      "personalInfo": {
+        "firstName": "JJesus",
+        "lastName": "Gomez",
+        "address": "Florida",
+        "city": "IDK",
+        "country": "IDK",
+        "nationality": "American",
+        "mobileNumber": "+1 234 678 1000",
+        "dateOfBirth": "200-10-10",
+        "gender": "Male",
+        "bankAccountNumber": "012345678910",
+        "bankName": "London Bank",
+        "bankRoutingNumber": "012345678910"
+      }
+    },
+    {
+      "userId": "user_482f4831c27fdeb8",
+      "status": "approved",
+      "idType": "id-card",
+      "region": "{\"id\":\"us\",\"name\":\"United States\",\"flag\":\"us\"}",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/285e7521-d0e9-4b1b-80cc-ce55cec854c2.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-11-04T17:00:20.258Z",
+      "updatedAt": "2025-11-04T17:00:20.286Z",
+      "personalInfo": {
+        "firstName": "Jhon",
+        "lastName": "Gomez",
+        "address": "Florida",
+        "city": "Florida",
+        "country": "Florida",
+        "nationality": "American",
+        "mobileNumber": "+1 234 567 1000",
+        "dateOfBirth": "2000-01-20",
+        "gender": "Male",
+        "bankAccountNumber": "012345678910",
+        "bankName": "American Bank",
+        "bankRoutingNumber": "012345678910"
+      }
+    },
+    {
+      "userId": "user_27dcd1fe646d2bff",
+      "status": "pending",
+      "idType": "passport",
+      "region": "{\"id\":\"ng\",\"name\":\"Nigeria\",\"flag\":\"nigeria\"}",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/3f53db0f-86b0-49d2-b50d-5a4108ee07c6.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-11-05T19:09:10.055Z",
+      "updatedAt": "2025-11-05T19:09:10.056Z",
+      "personalInfo": {
+        "firstName": "dasdas",
+        "lastName": "dasdasd",
+        "address": "wasdasd",
+        "city": "asdasd",
+        "country": "asda",
+        "nationality": "US",
+        "mobileNumber": "+1234567891",
+        "dateOfBirth": "0000-10-02",
+        "gender": "Male",
+        "bankAccountNumber": "12312312312",
+        "bankName": "asdasdasd",
+        "bankRoutingNumber": "123123123123",
+        "bvn": ""
+      }
+    },
+    {
+      "userId": "user_4db4e28f75f5e7f2",
+      "status": "rejected",
+      "idType": "passport",
+      "region": "{\"id\":\"ng\",\"name\":\"Nigeria\",\"flag\":\"nigeria\"}",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/3415c053-d894-4551-bb09-a8e1c87626f8.jpg",
+      "rejectionReason": "Fake ID",
+      "submittedAt": "2025-11-05T19:37:26.792Z",
+      "updatedAt": "2025-11-05T19:37:26.817Z",
+      "personalInfo": {
+        "firstName": "Jesus",
+        "lastName": "Martinez",
+        "address": "kasd",
+        "city": "fsd",
+        "country": "axd",
+        "nationality": "Nigerian",
+        "mobileNumber": "+1 222 333 4444",
+        "dateOfBirth": "2000-10-11",
+        "gender": "Male",
+        "bankAccounts": [
+          {
+            "id": "1762371422649",
+            "bankName": "dasdasd",
+            "accountNumber": "1111111111",
+            "routingNumber": "",
+            "bvn": "11111111111"
+          },
+          {
+            "id": "1762371438101",
+            "bankName": "asdasdasdasd",
+            "accountNumber": "11111111111",
+            "routingNumber": "",
+            "bvn": "11111111111"
+          }
+        ]
+      }
+    },
+    {
+      "userId": "user_492fd4c316a48b46",
+      "status": "approved",
+      "idType": null,
+      "region": null,
+      "photoUri": null,
+      "rejectionReason": null,
+      "submittedAt": null,
+      "updatedAt": "2025-11-06T22:47:44.589Z"
+    },
+    {
+      "userId": "user_499ecc0df7f5b946",
+      "status": "approved",
+      "idType": "passport",
+      "region": "{\"id\":\"ng\",\"name\":\"Nigeria\",\"flag\":\"nigeria\"}",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/884a39b2-5db3-43b6-97cf-59ec85a0ccef.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-11-07T04:15:28.264Z",
+      "updatedAt": "2025-11-07T04:15:28.265Z",
+      "personalInfo": {
+        "firstName": "Joli",
+        "lastName": "Amen",
+        "address": "Uqidnal",
+        "city": "Jdiskd",
+        "country": "Bsjdbd",
+        "nationality": "Quito",
+        "mobileNumber": "+1 222 333 5555",
+        "dateOfBirth": "2000-10-11",
+        "gender": "Male",
+        "bankAccounts": [
+          {
+            "id": "1762488921051",
+            "bankName": "Jdjdj",
+            "accountNumber": "6494944646649494",
+            "routingNumber": "",
+            "bvn": "94949794949"
+          }
+        ]
+      }
+    },
+    {
+      "userId": "user_24b746daf7959fc1",
+      "status": "pending",
+      "idType": "passport",
+      "region": "{\"id\":\"ng\",\"name\":\"Nigeria\",\"flag\":\"nigeria\"}",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/e319cd09-05cc-4cdf-9fe4-187252251cd1.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-11-07T04:36:25.102Z",
+      "updatedAt": "2025-11-07T04:36:25.103Z",
+      "personalInfo": {
+        "firstName": "Jkj",
+        "lastName": "Hjgj",
+        "address": "Hgshsh",
+        "city": "Hshshs",
+        "country": "Hshsh",
+        "nationality": "Ex",
+        "mobileNumber": "+1236586858688",
+        "dateOfBirth": "2000-10-11",
+        "gender": "Male",
+        "bankAccounts": [
+          {
+            "id": "1762490178042",
+            "bankName": "Jdjdhs",
+            "accountNumber": "1694648464848",
+            "routingNumber": "",
+            "bvn": "64645455494"
+          }
+        ]
+      }
+    },
+    {
+      "userId": "user_18af7417a4446a3d",
+      "status": "approved",
+      "idType": "passport",
+      "region": "{\"id\":\"ng\",\"name\":\"Nigeria\",\"flag\":\"nigeria\"}",
+      "photoUri": "file:///data/user/0/host.exp.exponent/cache/ImageManipulator/f297b986-381c-45df-8ecf-d48e413d29cd.jpg",
+      "rejectionReason": null,
+      "submittedAt": "2025-11-07T16:51:10.629Z",
+      "updatedAt": "2025-11-07T16:51:10.656Z",
+      "personalInfo": {
+        "firstName": "Cristian",
+        "lastName": "Antonella",
+        "address": "Quito",
+        "city": "Ambato",
+        "country": "Ecuador",
+        "nationality": "Ecuadorian",
+        "mobileNumber": "+593 123 123 1111",
+        "dateOfBirth": "2000-10-11",
+        "gender": "Male",
+        "bankAccounts": [
+          {
+            "id": "1762534248116",
+            "bankName": "Cristian Bank",
+            "accountNumber": "123123123123123",
+            "routingNumber": "",
+            "bvn": "12312312312"
+          }
+        ]
+      }
+    }
+  ]
+}
