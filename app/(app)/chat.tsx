@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Keyboard,
   Platform,
   ScrollView,
@@ -15,15 +16,30 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native"
 
 // ⭐ ADD THIS IMPORT
+import { AssistantAvatarIcon } from "@/components/Icons/assistant-avatar"
+import { UserAvatarIcon } from "@/components/Icons/user-avatar"
 import { Feather } from "@expo/vector-icons"
 import { Audio } from "expo-av"
 import * as FileSystem from "expo-file-system"
 
 const OPENAI_WHISPER_URL = "https://api.openai.com/v1/audio/transcriptions"
+const OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions"
+const SWAP_ASSISTANT_PROMPT = `
+You are the Pucket wallet swap concierge. Speak warmly and naturally because each response appears with typewriter animation. Always follow this flow:
+1. Extract token_from, amount, token_to from the user. Ask concise follow-ups if anything is missing or unclear. Interpret casual names (Ethereum→ETH, Bitcoin→BTC, etc.). Never guess values.
+2. Once you know all three values, confirm with: "Just to confirm, you want to convert {amount} {token_from} to {token_to}, right?"
+3. If user says yes, reply: "Got it. Would you like to move to the swap page now?"
+   - If they then say yes: respond ONLY with JSON {"token_from":"...","amount":...,"token_to":"..."} and nothing else.
+   - If they say no: reply "Alright, the operation has been canceled."
+4. If user says no during the first confirmation, ask "No problem. Would you like to cancel the conversion?"
+   - If yes: "Okay, the conversion has been canceled."
+   - If no: "Alright, let’s try again. Which token would you like to convert?"
+Never skip confirmations. Never output JSON except at the final affirmative step. Keep sentences short and conversational so they feel good when revealed character-by-character.
+`
 
 type Message = {
   id: string
@@ -40,8 +56,12 @@ export default function HomeScreen() {
   const [showMenuModal, setShowMenuModal] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
+  const [isThinking, setIsThinking] = useState(false)
   const scrollViewRef = useRef<ScrollView>(null)
   const recordingRef = useRef<Audio.Recording | null>(null)
+  const recordingWaveAnim = useRef(new Animated.Value(0))
+  const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null)
+  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const { resolvedTheme } = useTheme()
   const colors = Colors[resolvedTheme]
@@ -71,33 +91,147 @@ export default function HomeScreen() {
       if (recordingRef.current) {
         recordingRef.current.stopAndUnloadAsync().catch(() => null)
       }
+      pulseAnimationRef.current?.stop()
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current)
+        typingIntervalRef.current = null
+      }
     }
   }, [])
 
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true })
+    }, 120)
+
+    return () => clearTimeout(timeout)
+  }, [messages])
+
+  useEffect(() => {
+    if (isRecording) {
+      pulseAnimationRef.current = Animated.loop(
+        Animated.sequence([
+          Animated.timing(recordingWaveAnim.current, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(recordingWaveAnim.current, {
+            toValue: 0,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      )
+      pulseAnimationRef.current.start()
+    } else {
+      pulseAnimationRef.current?.stop()
+      recordingWaveAnim.current.setValue(0)
+    }
+  }, [isRecording])
+
+  const startAssistantTypewriter = useCallback(
+    (fullText: string) => {
+      if (!fullText) return
+
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current)
+        typingIntervalRef.current = null
+      }
+
+      const messageId = `${Date.now()}-bot`
+      const timestamp = new Date()
+
+      setMessages((prev) => [...prev, { id: messageId, text: "", sender: "bot", timestamp }])
+
+      let charIndex = 0
+      typingIntervalRef.current = setInterval(() => {
+        charIndex += 1
+        setMessages((prev) =>
+          prev.map((message) =>
+            message.id === messageId
+              ? { ...message, text: fullText.slice(0, Math.min(charIndex, fullText.length)) }
+              : message
+          )
+        )
+
+        if (charIndex >= fullText.length && typingIntervalRef.current) {
+          clearInterval(typingIntervalRef.current)
+          typingIntervalRef.current = null
+        }
+      }, 18)
+    },
+    [setMessages]
+  )
+
+  const sendAssistantResponse = useCallback(
+    async (conversation: Message[]) => {
+      if (!openAiApiKey) {
+        Alert.alert("Missing API key", "Add EXPO_PUBLIC_OPENAI_API_KEY to your .env file.")
+        startAssistantTypewriter("I need an OpenAI API key before I can help with swaps. Please add it and try again.")
+        return
+      }
+
+      try {
+        setIsThinking(true)
+        const response = await fetch(OPENAI_CHAT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${openAiApiKey}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            temperature: 0.2,
+            messages: [
+              { role: "system", content: SWAP_ASSISTANT_PROMPT },
+              ...conversation.map((msg) => ({
+                role: msg.sender === "user" ? "user" : "assistant",
+                content: msg.text,
+              })),
+            ],
+          }),
+        })
+
+        if (!response.ok) {
+          const errorMessage = await response.text()
+          throw new Error(errorMessage)
+        }
+
+        const data = await response.json()
+        const assistantText = data?.choices?.[0]?.message?.content?.trim()
+        setIsThinking(false)
+
+        if (assistantText) {
+          startAssistantTypewriter(assistantText)
+        } else {
+          startAssistantTypewriter("I didn't receive a message back. Mind asking again?")
+        }
+      } catch (error) {
+        console.error("sendAssistantResponse error", error)
+        setIsThinking(false)
+        startAssistantTypewriter("I hit a snag while thinking. Please try again in a moment.")
+      }
+    },
+    [openAiApiKey, startAssistantTypewriter]
+  )
+
   const handleSendMessage = useCallback(() => {
-    if (chatMessage.trim() === "") return
+    const trimmed = chatMessage.trim()
+    if (trimmed === "" || isThinking) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: chatMessage.trim(),
+      text: trimmed,
       sender: "user",
       timestamp: new Date(),
     }
 
-    const botMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      text: "Chat AI in Development",
-      sender: "bot",
-      timestamp: new Date(),
-    }
-
-    setMessages((prev) => [...prev, userMessage, botMessage])
+    const updatedConversation = [...messages, userMessage]
+    setMessages(updatedConversation)
     setChatMessage("")
-
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true })
-    }, 100)
-  }, [chatMessage])
+    sendAssistantResponse(updatedConversation)
+  }, [chatMessage, isThinking, messages, sendAssistantResponse])
 
   const handleMenuPress = useCallback(() => {
     setShowMenuModal(true)
@@ -252,6 +386,11 @@ export default function HomeScreen() {
               message.sender === "user" ? styles.userMessageContainer : styles.aiMessageContainer,
             ]}
           >
+            {message.sender === "bot" && (
+              <View style={styles.avatarContainer}>
+                <AssistantAvatarIcon />
+              </View>
+            )}
             <View
               style={[
                 styles.messageBubble,
@@ -264,9 +403,14 @@ export default function HomeScreen() {
                 {message.text}
               </Text>
             </View>
-            {message.sender === "user" && <View style={styles.messageSpacer} />}
+            {message.sender === "user" && (
+              <View style={styles.avatarContainer}>
+                <UserAvatarIcon />
+              </View>
+            )}
           </View>
         ))}
+        {isThinking && <ThinkingIndicator color={colors.textSecondary} />}
       </ScrollView>
 
       {/* Footer */}
@@ -308,20 +452,43 @@ export default function HomeScreen() {
           />
 
           {/* 🎤 REAL MIC ICON (Feather) */}
-          <TouchableOpacity
-            style={[
-              styles.voiceButton,
-              (isRecording || isTranscribing) && { backgroundColor: colors.background, borderRadius: 16 },
-            ]}
-            onPress={handleVoicePress}
-            disabled={isTranscribing}
-          >
-            {isTranscribing ? (
-              <ActivityIndicator size="small" color={colors.text} />
-            ) : (
-              <Feather name={isRecording ? "square" : "mic"} size={22} color={colors.text} />
-            )}
-          </TouchableOpacity>
+          <View style={styles.voiceButtonWrapper}>
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.voiceButtonWave,
+                {
+                  opacity: recordingWaveAnim.current.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.35, 0],
+                  }),
+                  transform: [
+                    {
+                      scale: recordingWaveAnim.current.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [1, 1.35],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+            <TouchableOpacity
+              style={[
+                styles.voiceButton,
+                isRecording && styles.voiceButtonRecording,
+                isTranscribing && styles.voiceButtonDisabled,
+              ]}
+              onPress={handleVoicePress}
+              disabled={isTranscribing}
+            >
+              {isTranscribing ? (
+                <ActivityIndicator size="small" color={colors.text} />
+              ) : (
+                <Feather name="mic" size={20} color={isRecording ? "#FFFFFF" : colors.text} />
+              )}
+            </TouchableOpacity>
+          </View>
 
           {/* Send Button */}
           <TouchableOpacity
@@ -332,6 +499,61 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </View>
+    </View>
+  )
+}
+
+function ThinkingIndicator({ color }: { color: string }) {
+  const dotOne = useRef(new Animated.Value(0)).current
+  const dotTwo = useRef(new Animated.Value(0)).current
+  const dotThree = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    const makeAnimation = (animatedValue: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(animatedValue, {
+            toValue: -4,
+            duration: 220,
+            useNativeDriver: true,
+          }),
+          Animated.timing(animatedValue, {
+            toValue: 0,
+            duration: 220,
+            useNativeDriver: true,
+          }),
+          Animated.delay(120),
+        ])
+      )
+
+    const animations = [
+      makeAnimation(dotOne, 0),
+      makeAnimation(dotTwo, 120),
+      makeAnimation(dotThree, 240),
+    ]
+
+    animations.forEach((animation) => animation.start())
+
+    return () => {
+      animations.forEach((animation) => animation.stop())
+    }
+  }, [dotOne, dotTwo, dotThree])
+
+  return (
+    <View style={styles.thinkingIndicator}>
+      {[dotOne, dotTwo, dotThree].map((animValue, index) => (
+        <Animated.View
+          key={index}
+          style={[
+            styles.thinkingDot,
+            {
+              backgroundColor: color,
+              transform: [{ translateY: animValue }],
+            },
+          ]}
+        />
+      ))}
     </View>
   )
 }
@@ -381,11 +603,14 @@ const styles = StyleSheet.create({
   },
   aiMessageContainer: {
     flexDirection: "row",
-    gap: 0,
+    gap: 8,
+    alignItems: "flex-end",
   },
   userMessageContainer: {
     flexDirection: "row",
     justifyContent: "flex-end",
+    alignItems: "flex-end",
+    gap: 8,
   },
 
   messageBubble: {
@@ -408,8 +633,13 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#FFFFFF",
   },
-  messageSpacer: {
-    display: "none",
+  avatarContainer: {
+    width: 40,
+    height: 40,
+    overflow: "hidden",
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   chatFooter: {
@@ -465,6 +695,30 @@ const styles = StyleSheet.create({
     marginRight: 2,
     cursor: "pointer",
   },
+  voiceButtonWrapper: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  voiceButtonWave: {
+    position: "absolute",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: "rgba(255, 75, 75, 0.45)",
+  },
+  voiceButtonRecording: {
+    backgroundColor: "#FF4B4B",
+    borderRadius: 16,
+    width: 32,
+    height: 32,
+  },
+  voiceButtonDisabled: {
+    opacity: 0.6,
+  },
 
   sendButton: {
     width: 40,
@@ -472,5 +726,17 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+  },
+  thinkingIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  thinkingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 })
