@@ -3,6 +3,7 @@ import { BackButton } from "@/components/Icons/back-button"
 import { SendButton } from "@/components/Icons/send-button"
 import { Colors } from "@/constants/theme"
 import { useTheme } from "@/contexts/theme-context"
+import env from "@/env.json"
 import { router } from "expo-router"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
@@ -20,25 +21,118 @@ import {
 } from "react-native"
 
 // ⭐ ADD THIS IMPORT
-import { AssistantAvatarIcon } from "@/components/Icons/assistant-avatar"
-import { UserAvatarIcon } from "@/components/Icons/user-avatar"
+import { correctVoiceTranscription } from "@/utils/typo-correction"
 import { Feather } from "@expo/vector-icons"
 import { Audio } from "expo-av"
 import * as FileSystem from "expo-file-system"
 
 const OPENAI_WHISPER_URL = "https://api.openai.com/v1/audio/transcriptions"
 const OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions"
-const SWAP_ASSISTANT_PROMPT = `
-You are the Pucket wallet swap concierge. Speak warmly and naturally because each response appears with typewriter animation. Always follow this flow:
-1. Extract token_from, amount, token_to from the user. Ask concise follow-ups if anything is missing or unclear. Interpret casual names (Ethereum→ETH, Bitcoin→BTC, etc.). Never guess values.
-2. Once you know all three values, confirm with: "Just to confirm, you want to convert {amount} {token_from} to {token_to}, right?"
-3. If user says yes, reply: "Got it. Would you like to move to the swap page now?"
-   - If they then say yes: respond ONLY with JSON {"token_from":"...","amount":...,"token_to":"..."} and nothing else.
-   - If they say no: reply "Alright, the operation has been canceled."
-4. If user says no during the first confirmation, ask "No problem. Would you like to cancel the conversion?"
-   - If yes: "Okay, the conversion has been canceled."
-   - If no: "Alright, let’s try again. Which token would you like to convert?"
-Never skip confirmations. Never output JSON except at the final affirmative step. Keep sentences short and conversational so they feel good when revealed character-by-character.
+
+// Chain ID mapping
+const CHAIN_IDS: Record<string, number> = {
+  ethereum: 1,
+  eth: 1,
+  bsc: 56,
+  binance: 56,
+  "bnb chain": 56,
+  "binance smart chain": 56,
+  polygon: 137,
+  matic: 137,
+  arbitrum: 42161,
+  arb: 42161,
+  base: 8453,
+  solana: 0, // Solana doesn't use chain IDs
+  sol: 0,
+  bitcoin: 0, // Bitcoin doesn't use chain IDs
+  btc: 0,
+}
+
+// Normalize chain name to standard format
+function normalizeChainName(chainName: string): string {
+  const lower = chainName.toLowerCase().trim()
+  if (lower.includes("ethereum") || lower === "eth") return "Ethereum"
+  if (lower.includes("bsc") || lower.includes("binance") || lower.includes("bnb")) return "BSC"
+  if (lower.includes("polygon") || lower === "matic") return "Polygon"
+  if (lower.includes("arbitrum") || lower === "arb") return "Arbitrum"
+  if (lower === "base") return "Base"
+  if (lower.includes("solana") || lower === "sol") return "Solana"
+  if (lower.includes("bitcoin") || lower === "btc") return "Bitcoin"
+  return chainName
+}
+
+// Get chain ID from chain name
+function getChainId(chainName: string): number | null {
+  const normalized = normalizeChainName(chainName).toLowerCase()
+  return CHAIN_IDS[normalized] ?? null
+}
+
+const WALLET_ASSISTANT_PROMPT = `
+You are a helpful Pucket blockchain wallet assistant with extensive blockchain knowledge. Speak warmly and naturally because each response appears with typewriter animation.
+Your role is to help users perform wallet functions: Swap, Send, Receive, and Sell. You must determine which action the user intends and extract ALL required parameters.
+SUPPORTED ACTIONS AND REQUIRED PARAMETERS:
+1. SWAP - Exchange one token for another
+   Required: tokenFrom, tokenTo, amount, chainId
+   Example: "I want to swap 100 USDT to ETH on Ethereum"
+2. SEND - Transfer tokens to another address
+   Required: receiverAddress, token, amount, chainId
+   Example: "Send 50 USDT to 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb on Ethereum"
+3. RECEIVE - Get wallet address to receive tokens
+   Required: walletAddress (user's own address)
+   Example: "What's my wallet address?" or "I want to receive tokens"
+4. SELL - Sell tokens for fiat
+   Required: token, amount, chainId
+   Example: "I want to sell 1 ETH on Ethereum"
+CHAIN SUPPORT:
+- Ethereum (chainId: 1)
+- BSC / Binance Smart Chain (chainId: 56)
+- Polygon (chainId: 137)
+- Arbitrum (chainId: 42161)
+- Base (chainId: 8453)
+- Solana (no chainId)
+- Bitcoin (no chainID)
+
+TOKEN NORMALIZATION:
+- Ethereum → ETH
+- Bitcoin → BTC
+- Tether → USDT
+- USD Coin → USDC
+- Solana → SOL
+- BEP → BEP
+
+WORKFLOW FOR EACH ACTION:
+1. IDENTIFY ACTION: Determine if user wants Swap, Send, Receive, or Sell from their message.
+2. EXTRACT PARAMETERS: Extract all required parameters for the identified action. Ask concise follow-up questions if anything is missing or unclear. Never guess values.
+
+3. CLARIFICATION: If the question is unclear or parameters are missing, ask specific questions. For example:
+   - "Which token would you like to swap from?"
+   - "What's the recipient's wallet address?"
+   - "Which blockchain network should we use?"
+
+4. CONFIRMATION: Once you have ALL required parameters, confirm with the user:
+   - Swap: "Just to confirm, you want to swap {amount} {tokenFrom} to {tokenTo} on {chainId}, right?"
+   - Send: "Just to confirm, you want to send {amount} {token} to {receiverAddress} on {chainId}, right?"
+   - Receive: "Here's your wallet address: {walletAddress}. Would you like to proceed with receiving?"
+   - Sell: "Just to confirm, you want to sell {amount} {token} on {chainId}, right?"
+
+5. EXECUTION: If user confirms positively (yes, proceed, confirm, etc.), respond ONLY with this exact JSON format (no other text):
+   - Swap: {"action":"swap","tokenFrom":"...","tokenTo":"...","amount":...,"chainId":...}
+   - Send: {"action":"send","receiverAddress":"...","token":"...","amount":...,"chainId":...}
+   - Receive: {"action":"receive","walletAddress":"..."}
+   - Sell: {"action":"sell","token":"...","amount":...,"chainId":...}
+
+6. CANCELLATION: If user says no to confirmation:
+   - Ask: "No problem. Would you like to cancel this operation?"
+   - If yes: "Okay, the operation has been canceled."
+   - If no: "Alright, let's try again. [Ask what they'd like to do]"
+
+IMPORTANT RULES:
+- Never skip confirmations. Never output JSON except when the user explicitly confirms.
+- Always extract chainId. If user doesn't specify, ask which chain/network they want to use.
+- For addresses, validate format (0x for EVM, base58 for Solana).
+- Keep sentences short and conversational for typewriter effect.
+- If user asks for clarity (just wants to understand), don't proceed - only clarify.
+- If user confirms (wants to proceed), then execute the action.
 `
 
 type Message = {
@@ -57,19 +151,25 @@ export default function HomeScreen() {
   const [isRecording, setIsRecording] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [isThinking, setIsThinking] = useState(false)
+  const [actionStatus, setActionStatus] = useState<{
+    type: "idle" | "swap" | "send" | "receive" | "sell"
+    message: string
+  }>({ type: "idle", message: "" })
   const scrollViewRef = useRef<ScrollView>(null)
   const recordingRef = useRef<Audio.Recording | null>(null)
   const recordingWaveAnim = useRef(new Animated.Value(0))
   const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null)
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const conversionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { resolvedTheme } = useTheme()
   const colors = Colors[resolvedTheme]
   const openAiApiKey =
-    (globalThis as any)?.process?.env?.EXPO_PUBLIC_OPENAI_API_KEY ??
-    (globalThis as any)?.process?.env?.OPENAI_API_KEY ??
+    env.OPENAI_API_KEY ||
+    process.env.EXPO_PUBLIC_OPENAI_API_KEY ||
+    process.env.OPENAI_API_KEY ||
     ""
-
+  
   useEffect(() => {
     const keyboardDidShow = Keyboard.addListener("keyboardDidShow", (e) => {
       setKeyboardVisible(true)
@@ -95,6 +195,13 @@ export default function HomeScreen() {
       if (typingIntervalRef.current) {
         clearInterval(typingIntervalRef.current)
         typingIntervalRef.current = null
+      }
+      if (conversionTimeoutRef.current) {
+        clearTimeout(conversionTimeoutRef.current)
+        conversionTimeoutRef.current = null
+      }
+      if (actionStatus.type !== "idle") {
+        setActionStatus({ type: "idle", message: "" })
       }
     }
   }, [])
@@ -168,7 +275,7 @@ export default function HomeScreen() {
     async (conversation: Message[]) => {
       if (!openAiApiKey) {
         Alert.alert("Missing API key", "Add EXPO_PUBLIC_OPENAI_API_KEY to your .env file.")
-        startAssistantTypewriter("I need an OpenAI API key before I can help with swaps. Please add it and try again.")
+        startAssistantTypewriter("I need an OpenAI API key before I can help. Please add it and try again.")
         return
       }
 
@@ -184,7 +291,7 @@ export default function HomeScreen() {
             model: "gpt-4o-mini",
             temperature: 0.2,
             messages: [
-              { role: "system", content: SWAP_ASSISTANT_PROMPT },
+              { role: "system", content: WALLET_ASSISTANT_PROMPT },
               ...conversation.map((msg) => ({
                 role: msg.sender === "user" ? "user" : "assistant",
                 content: msg.text,
@@ -203,6 +310,84 @@ export default function HomeScreen() {
         setIsThinking(false)
 
         if (assistantText) {
+          // Check if the response is a JSON with an action
+          try {
+            const jsonMatch = assistantText.match(/\{[\s\S]*\}/)
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0])
+              
+              // Handle Swap action
+              if (parsed.action === "swap" && parsed.tokenFrom && parsed.tokenTo && parsed.amount) {
+                // chainId can be a number or chain name string
+                const chainId = typeof parsed.chainId === "number" 
+                  ? parsed.chainId 
+                  : (parsed.chainId ? getChainId(parsed.chainId) : getChainId("ethereum"))
+                setActionStatus({ type: "swap", message: "Swapping..." })
+                if (conversionTimeoutRef.current) {
+                  clearTimeout(conversionTimeoutRef.current)
+                }
+                conversionTimeoutRef.current = setTimeout(() => {
+                  setActionStatus({ type: "idle", message: "" })
+                  startAssistantTypewriter("The operation was successful.")
+                  conversionTimeoutRef.current = null
+                }, 3000)
+                return
+              }
+              
+              // Handle Send action
+              if (parsed.action === "send" && parsed.receiverAddress && parsed.token && parsed.amount) {
+                // chainId can be a number or chain name string
+                const chainId = typeof parsed.chainId === "number" 
+                  ? parsed.chainId 
+                  : (parsed.chainId ? getChainId(parsed.chainId) : getChainId("ethereum"))
+                setActionStatus({ type: "send", message: "Sending..." })
+                if (conversionTimeoutRef.current) {
+                  clearTimeout(conversionTimeoutRef.current)
+                }
+                conversionTimeoutRef.current = setTimeout(() => {
+                  setActionStatus({ type: "idle", message: "" })
+                  startAssistantTypewriter("The operation was successful.")
+                  conversionTimeoutRef.current = null
+                }, 3000)
+                return
+              }
+              
+              // Handle Receive action
+              if (parsed.action === "receive" && parsed.walletAddress) {
+                setActionStatus({ type: "receive", message: "Receiving..." })
+                if (conversionTimeoutRef.current) {
+                  clearTimeout(conversionTimeoutRef.current)
+                }
+                conversionTimeoutRef.current = setTimeout(() => {
+                  setActionStatus({ type: "idle", message: "" })
+                  startAssistantTypewriter("The operation was successful.")
+                  conversionTimeoutRef.current = null
+                }, 2000)
+                return
+              }
+              
+              // Handle Sell action
+              if (parsed.action === "sell" && parsed.token && parsed.amount) {
+                // chainId can be a number or chain name string
+                const chainId = typeof parsed.chainId === "number" 
+                  ? parsed.chainId 
+                  : (parsed.chainId ? getChainId(parsed.chainId) : getChainId("ethereum"))
+                setActionStatus({ type: "sell", message: "Selling..." })
+                if (conversionTimeoutRef.current) {
+                  clearTimeout(conversionTimeoutRef.current)
+                }
+                conversionTimeoutRef.current = setTimeout(() => {
+                  setActionStatus({ type: "idle", message: "" })
+                  startAssistantTypewriter("The operation was successful.")
+                  conversionTimeoutRef.current = null
+                }, 3000)
+                return
+              }
+            }
+          } catch {
+            // Not JSON or invalid JSON, treat as normal text
+          }
+          
           startAssistantTypewriter(assistantText)
         } else {
           startAssistantTypewriter("I didn't receive a message back. Mind asking again?")
@@ -327,7 +512,9 @@ export default function HomeScreen() {
 
         const transcription = responseText.trim()
         if (transcription.length > 0) {
-          setChatMessage((prev) => (prev ? `${prev} ${transcription}` : transcription))
+          // Apply typo correction to voice transcription
+          const corrected = correctVoiceTranscription(transcription)
+          setChatMessage((prev) => (prev ? `${prev} ${corrected}` : corrected))
         }
       } catch (error) {
         console.error("transcribeAudioAsync error", error)
@@ -386,11 +573,11 @@ export default function HomeScreen() {
               message.sender === "user" ? styles.userMessageContainer : styles.aiMessageContainer,
             ]}
           >
-            {message.sender === "bot" && (
+            {/* {message.sender === "bot" && (
               <View style={styles.avatarContainer}>
                 <AssistantAvatarIcon />
               </View>
-            )}
+            )} */}
             <View
               style={[
                 styles.messageBubble,
@@ -403,13 +590,21 @@ export default function HomeScreen() {
                 {message.text}
               </Text>
             </View>
-            {message.sender === "user" && (
+            {/* {message.sender === "user" && (
               <View style={styles.avatarContainer}>
                 <UserAvatarIcon />
               </View>
-            )}
+            )} */}
           </View>
         ))}
+        {actionStatus.type !== "idle" && (
+          <View style={styles.conversionStatusRow}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={[styles.conversionStatusText, { color: colors.text }]}>
+              {actionStatus.message}
+            </Text>
+          </View>
+        )}
         {isThinking && <ThinkingIndicator color={colors.textSecondary} />}
       </ScrollView>
 
@@ -615,8 +810,8 @@ const styles = StyleSheet.create({
 
   messageBubble: {
     maxWidth: "80%",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 20,
   },
   aiMessageBubble: {
@@ -628,8 +823,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
   },
   messageText: {
-    fontSize: 15,
-    lineHeight: 19.5,
+    fontSize: 13,
+    lineHeight: 19,
     fontWeight: "500",
     color: "#FFFFFF",
   },
@@ -738,5 +933,16 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  conversionStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  conversionStatusText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
 })
