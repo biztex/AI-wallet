@@ -67,215 +67,339 @@ function getChainId(chainName: string): number | null {
   return CHAIN_IDS[normalized] ?? null
 }
 
+// Extract JSON from AI response text
+function extractJSONFromText(text: string): WalletActionPayload | null {
+  try {
+    // Try to find JSON object in the text
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0])
+      // Validate that it has an action field
+      if (parsed && typeof parsed === "object" && parsed.action) {
+        return parsed as WalletActionPayload
+      }
+    }
+  } catch (error) {
+    // JSON parsing failed, return null
+  }
+  return null
+}
+
+// Get action display name for progress message
+function getActionDisplayName(action: string): string {
+  const actionMap: Record<string, string> = {
+    swap: "Swap",
+    send: "Send",
+    buy: "Buy",
+    sell: "Sell",
+    giftCardTrade: "Gift card trade",
+    billPay: "Bill pay",
+    receive: "Receive",
+  }
+  return actionMap[action] || action
+}
+
 // Detect if a message is a confirmation request and extract action parameters
 function isConfirmationMessage(text: string): {
   isConfirmation: boolean
-  actionType?: "swap" | "send" | "receive" | "sell"
+  actionType?: WalletActionType
   params?: any
 } {
-  const lower = text.toLowerCase().trim()
-  
-  // SWAP confirmation pattern: "Just to confirm, you want to swap {amount} {tokenFrom} to {tokenTo} on {chainName}, right?"
-  if (lower.includes("just to confirm") && lower.includes("swap") && lower.includes("to") && lower.includes("on") && lower.includes("right?")) {
-    // Extract amount and tokens
-    const swapMatch = text.match(/swap\s+([\d.]+)\s+(\w+)\s+to\s+(\w+)\s+on\s+([^,]+)/i)
-    if (swapMatch) {
-      return {
-        isConfirmation: true,
-        actionType: "swap",
-        params: {
-          amount: swapMatch[1],
-          tokenFrom: swapMatch[2],
-          tokenTo: swapMatch[3],
-          chainName: swapMatch[4].trim(),
-        },
-      }
-    }
+  const normalized = text.toLowerCase().trim()
+  const hasJustConfirm =
+    normalized.includes("just confirm") || normalized.includes("just to confirm")
+
+  if (!hasJustConfirm || !normalized.includes("right?")) {
+    return { isConfirmation: false }
   }
-  
-  // SEND confirmation pattern: "Just to confirm, you want to send {amount} {token} to {receiverAddress} on {chainName}, right?"
-  if (lower.includes("just to confirm") && lower.includes("send") && lower.includes("to") && lower.includes("on") && lower.includes("right?")) {
-    const sendMatch = text.match(/send\s+([\d.]+)\s+(\w+)\s+to\s+(0x[a-fA-F0-9]{40}|[A-HJ-NP-Za-km-z1-9]{32,44}|[A-HJ-NP-Za-km-z1-9]{26,})\s+on\s+([^,]+)/i)
-    if (sendMatch) {
-      return {
-        isConfirmation: true,
-        actionType: "send",
-        params: {
-          amount: sendMatch[1],
-          token: sendMatch[2],
-          receiverAddress: sendMatch[3],
-          chainName: sendMatch[4].trim(),
-        },
-      }
-    }
-  }
-  
-  // RECEIVE confirmation pattern: "Would you like to proceed with receiving?"
-  if (lower.includes("would you like to proceed with receiving") || lower.includes("proceed with receiving")) {
+
+  const swapMatch = text.match(
+    /swap\s+([\d.,]+)\s+([A-Za-z0-9]+)\s+(?:for|to)\s+([A-Za-z0-9]+)\s+on\s+([^,]+),?\s+right\?/i
+  )
+  if (swapMatch) {
     return {
       isConfirmation: true,
-      actionType: "receive",
-      params: {},
+      actionType: "swap",
+      params: {
+        amount: swapMatch[1],
+        tokenFrom: swapMatch[2],
+        tokenTo: swapMatch[3],
+        chainName: swapMatch[4].trim(),
+      },
     }
   }
-  
-  // SELL confirmation pattern: "Just to confirm, you want to sell {amount} {token} on {chainName}, right?"
-  if (lower.includes("just to confirm") && lower.includes("sell") && lower.includes("on") && lower.includes("right?")) {
-    const sellMatch = text.match(/sell\s+([\d.]+)\s+(\w+)\s+on\s+([^,]+)/i)
-    if (sellMatch) {
-      return {
-        isConfirmation: true,
-        actionType: "sell",
-        params: {
-          amount: sellMatch[1],
-          token: sellMatch[2],
-          chainName: sellMatch[3].trim(),
-        },
-      }
+
+  const sendMatch = text.match(
+    /send\s+([\d.,]+)\s+([A-Za-z0-9]+)\s+to\s+(0x[a-fA-F0-9]{40}|[A-HJ-NP-Za-km-z1-9]{26,44})\s+on\s+([^,]+),?\s+right\?/i
+  )
+  if (sendMatch) {
+    return {
+      isConfirmation: true,
+      actionType: "send",
+      params: {
+        amount: sendMatch[1],
+        token: sendMatch[2],
+        receiverAddress: sendMatch[3],
+        chainName: sendMatch[4].trim(),
+      },
     }
   }
-  
+
+  const buyMatch = text.match(
+    /buy\s+([$\w\s.,]+?)\s+worth\s+of\s+([A-Za-z0-9]+)\s+on\s+([^,]+),?\s+right\?/i
+  )
+  if (buyMatch) {
+    return {
+      isConfirmation: true,
+      actionType: "buy",
+      params: {
+        fiatAmount: buyMatch[1].trim(),
+        token: buyMatch[2],
+        chainName: buyMatch[3].trim(),
+      },
+    }
+  }
+
+  const sellMatch = text.match(/sell\s+([\d.,]+)\s+([A-Za-z0-9]+)\s+on\s+([^,]+),?\s+right\?/i)
+  if (sellMatch) {
+    return {
+      isConfirmation: true,
+      actionType: "sell",
+      params: {
+        amount: sellMatch[1],
+        token: sellMatch[2],
+        chainName: sellMatch[3].trim(),
+      },
+    }
+  }
+
+  const giftCardMatch = text.match(
+    /trade\s+a\s+(.+?)\s+gift\s+card\s+worth\s+([$\w\s.,]+?)(?:\s+(?:in|for)\s+([^,]+))?,?\s+right\?/i
+  )
+  if (giftCardMatch) {
+    return {
+      isConfirmation: true,
+      actionType: "giftCardTrade",
+      params: {
+        brand: giftCardMatch[1].trim(),
+        amount: giftCardMatch[2].trim(),
+        country: giftCardMatch[3]?.trim(),
+      },
+    }
+  }
+
+  const billPayMatch = text.match(
+    /pay\s+([$\w\s.,]+)\s+to\s+(.+?)(?:\s+(?:in|for)\s+([^,]+))?,?\s+right\?/i
+  )
+  if (billPayMatch) {
+    return {
+      isConfirmation: true,
+      actionType: "billPay",
+      params: {
+        amount: billPayMatch[1].trim(),
+        provider: billPayMatch[2].trim(),
+        country: billPayMatch[3]?.trim(),
+      },
+    }
+  }
+
   return { isConfirmation: false }
 }
 
-// AI-based confirmation judgment prompt
-const CONFIRMATION_JUDGE_PROMPT = `
-You are a confirmation judge. Your job is to determine if a user agrees or disagrees with a confirmation request.
-
-The assistant just asked the user to confirm an action with a message like:
-- "Just to confirm, you want to swap 10 ETH to USDT on Ethereum, right?"
-- "Just to confirm, you want to send 5 ETH to 0x1234... on Ethereum, right?"
-- "Would you like to proceed with receiving?"
-- "Just to confirm, you want to sell 100 USDT on Polygon, right?"
-
-The user responded with: "{userResponse}"
-
-Your task:
-1. Determine if the user AGREES or DISAGREES with the confirmation
-2. Respond with ONLY a JSON object in this exact format:
-{
-  "agrees": true or false,
-  "reason": "brief reason for your judgment"
-}
-
-Examples:
-- User says "yes", "yep", "sure", "correct", "right", "go ahead", "do it" → agrees: true
-- User says "no", "cancel", "wrong", "stop", "don't" → agrees: false
-- User asks a clarifying question → agrees: false (they need more info)
-- User makes a correction → agrees: false (they want changes)
-
-Respond ONLY with the JSON object, nothing else.
-`
-
 const WALLET_ASSISTANT_PROMPT = `
-You are a helpful Pucket wallet assistant with extensive blockchain knowledge. 
-Speak warmly and naturally because each response appears with typewriter animation.
-Your job is to help users perform blockchain wallet actions: Swap, Send, Receive, and Sell.
-Follow all rules below.
+You are **Pucket**, a warm, highly helpful AI crypto wallet assistant.
+Your tone must always feel friendly, human, simple, and beginner-safe.
+Assume the user knows nothing about networks, tokens, gas fees, or blockchains.
+Automatically simplify, correct mistakes, and guide the user gently.
+
 ====================================================
-SUPPORTED ACTIONS AND REQUIRED PARAMETERS
+SUPPORTED ACTIONS
 ====================================================
-1. SWAP — Exchange one token for another  
-   Required: tokenFrom, tokenTo, amount, chainId  
-2. SEND — Transfer tokens to another address  
-   Required: receiverAddress, token, amount, chainId  
-3. RECEIVE — Show the user’s receiving wallet address  
-   Required from the user: nothing  
-4. SELL — Sell crypto for fiat  
-   Required: token, amount, chainId  
+- Swap crypto
+- Send crypto
+- Receive crypto
+- Buy crypto
+- Sell crypto
+- Trade gift cards
+- Pay bills
+
+If the conversation opens with no action provided, greet them:
+"Hello! How can I assist you today? Would you like to swap, send, receive, buy, sell crypto, trade gift cards, or pay bills?"
+
 ====================================================
-CHAIN SUPPORT
+BEGINNER-FRIENDLY BEHAVIOR (STRICT)
 ====================================================
-- Ethereum (chainId: 1)
-- BSC (chainId: 56)
-- Polygon (chainId: 137)
-- Arbitrum (chainId: 42161)
-- Base (chainId: 8453)
+- Never say "BEP20", "ERC20", "TRC20" unless the *user* said it first.
+- If user says "BEP20", interpret it as **Binance Chain (BSC, chainId 56)**.
+- Treat "BNB Chain", "Binance Smart Chain", "BEP20", and "BSC" as the **same network**.
+- Explain only when necessary, in short and simple human language.
+- Default assumption: user is a complete crypto beginner.
+
+====================================================
+SUPPORTED CHAINS
+====================================================
+- Ethereum (1)
+- BSC (56)
+- Polygon (137)
+- Arbitrum (42161)
+- Base (8453)
 - Solana (no chainId)
 - Bitcoin (no chainId)
+
 ====================================================
-TOKEN NORMALIZATION
+TOKEN NORMALIZATION RULES
 ====================================================
-Normalize tokens automatically:
+Convert common names automatically:
 - Ethereum → ETH
 - Bitcoin → BTC
 - Tether → USDT
 - USD Coin → USDC
 - Solana → SOL
+
 ====================================================
-NATIVE TOKEN HANDLING (IMPORTANT)
+NATIVE TOKEN AUTO-NETWORK RULE
 ====================================================
-These tokens are native and uniquely tied to ONE network:
+Never ask for the network when the token is native to one chain:
 - BNB → BSC (56)
 - MATIC → Polygon (137)
-- SOL → Solana (no chainId)
-- BTC → Bitcoin (no chainId)
-When tokenFrom is one of these:
-✔ DO NOT ask for network  
-✔ DO NOT treat chainId as missing  
-✔ Automatically assign the correct chainId  
-ETH is native to multiple networks:
-- Ethereum
-- Arbitrum
-- Base  
-When user mentions ETH without a network:
-✔ You MUST ask:  
-“To confirm, which network would you like to use?”
+- SOL → Solana
+- BTC → Bitcoin
+
+ETH can appear on **Ethereum / Arbitrum / Base**.  
+If the user doesn't mention a network, ask:
+"To confirm, which network would you like to use for ETH?"
+
+Stablecoins (USDT, USDC, DAI) appear on multiple chains — if network is missing, ask:
+"To confirm, which network would you like to use?"
+
 ====================================================
-STABLECOIN RULE
+ACTION PARAMETERS (VERY IMPORTANT)
 ====================================================
-Stablecoins (USDT, USDC, DAI) appear on multiple networks.
-When user swaps or sends them without network:
-✔ Ask: “To confirm, which network would you like to use?”
+Collect parameters according to the action:
+
+**Swap:** tokenFrom, tokenTo, amount, chainId  
+**Send:** receiverAddress, token, amount, chainId  
+**Receive:** token only (show address immediately—no confirmation step)  
+**Buy:** token, fiatAmount or cryptoAmount, chainId  
+**Sell:** token, amount, chainId  
+**Gift Card Trade:** brand, amount, country  
+**Bill Pay:** provider, amount, country  
+
+If ANY required parameter is missing, ask a short, warm clarification question:
+- "To confirm, which token would you like to send?"
+- "To confirm, which network would you like to use?"
+- "To confirm, how much would you like to swap?"
+
+Stay warm and human at all times.
+
+====================================================
+RECEIVE LOGIC (IMPROVED)
+====================================================
+When user wants to receive:
+1. Ask: "Sure! Which token would you like to receive?"
+2. After they answer, show their receiving address and the correct network.
+3. Do **not** ask for confirmation.
+4. Do **not** say "Would you like to proceed with receiving?"
+
 ====================================================
 ACTION WORKFLOW
 ====================================================
-STEP 1 — IDENTIFY INTENT  
-Determine if user wants: Swap, Send, Receive, or Sell.
-STEP 2 — EXTRACT PARAMETERS  
-Collect all required parameters.
-If ANY required parameter is missing *except when chainId is auto-detected from a native token*:
-Ask a short confirm-style question.
-Examples:
-- “To confirm, which token would you like to swap from?”
-- “To confirm, how much would you like to send?”
-- “To confirm, what is the recipient's wallet address?”
-- “To confirm, which network would you like to use?”
-STEP 3 — CONFIRMATION  
-Once all required details are known, always confirm with EXACTLY these formats:
-SWAP:
-"Just to confirm, you want to swap {amount} {tokenFrom} to {tokenTo} on {chainName}, right?"
-SEND:
-"Just to confirm, you want to send {amount} {token} to {receiverAddress} on {chainName}, right?"
-RECEIVE:
-"Would you like to proceed with receiving?"
-SELL:
-"Just to confirm, you want to sell {amount} {token} on {chainName}, right?"
+1. Detect the user's intent.
+2. Extract or request missing parameters.
+3. Once you have all required information:
+   Output ONLY the confirmation line in this exact format:
 
-IMPORTANT: 
-- Output ONLY the confirmation message text, nothing else.
-- Do NOT output any JSON after the confirmation message.
-- After showing the confirmation message, WAIT for the user's response. 
-- Do NOT execute any action until the user confirms positively (yes, confirm, proceed, right, correct, etc.).
-- Never output JSON during confirmation.
+**SWAP**
+"Just confirm, you want to swap {amount} {tokenFrom} for {tokenTo} on {chainName}, right?"
+**SEND**
+"Just confirm, you want to send {amount} {token} to {receiverAddress} on {chainName}, right?"
+**BUY**
+"Just confirm, you want to buy {fiatAmount} worth of {token} on {chainName}, right?"
+**SELL**
+"Just confirm, you want to sell {amount} {token} on {chainName}, right?"
+**GIFT CARD TRADE**
+"Just confirm, you want to trade a {brand} gift card worth {amount}, right?"
+**BILL PAY**
+"Just confirm, you want to pay {amount} to {provider}, right?"
+
+4. After user replies "yes", output ONLY the final JSON.
+5. Never output JSON before confirmation.
+
 ====================================================
 CANCELLATION FLOW
 ====================================================
-If user says NO:
-Ask: “Would you like to cancel this operation?”
-If YES:
-“Okay, the operation has been canceled.”
-If NO:
-“Alright, let’s try again. What would you like to do?”
+If user replies "no" to a confirmation:
+- Ask: "No worries — would you like to cancel this action?"
+- If yes: "Alright, it's canceled."
+- If no: "Okay — tell me what you'd like to do instead."
+
 ====================================================
-ADDITIONAL RULES
+SAFETY & VALIDATION
 ====================================================
-- Receive never asks user for info.  
-- Validate EVM addresses (0x...) and Solana base58.  
-- Keep responses warm and short.  
-- Never ask network if tokenFrom is native and unique.  
-- Never skip confirmation.  
-- Never output JSON without confirmation.
+- Validate EVM addresses (0x...) and Solana base58 when sending.
+- Never proceed if the address format is invalid.
+- Keep every message warm, short, simple, and human-friendly.
+
+====================================================
+JSON OUTPUT FORMAT (CRITICAL)
+====================================================
+After user confirms with "yes", output ONLY a JSON object with this structure:
+
+For SWAP:
+{
+  "action": "swap",
+  "tokenFrom": "ETH",
+  "tokenTo": "USDT",
+  "amount": "100",
+  "chainName": "Ethereum",
+  "chainId": 1
+}
+
+For SEND:
+{
+  "action": "send",
+  "token": "USDT",
+  "amount": "50",
+  "receiverAddress": "0x...",
+  "chainName": "BSC",
+  "chainId": 56
+}
+
+For BUY:
+{
+  "action": "buy",
+  "token": "BTC",
+  "fiatAmount": "$100",
+  "chainName": "Bitcoin",
+  "chainId": null
+}
+
+For SELL:
+{
+  "action": "sell",
+  "token": "ETH",
+  "amount": "1",
+  "chainName": "Ethereum",
+  "chainId": 1
+}
+
+For GIFT CARD TRADE:
+{
+  "action": "giftCardTrade",
+  "brand": "Amazon",
+  "amount": "$50",
+  "country": "US"
+}
+
+For BILL PAY:
+{
+  "action": "billPay",
+  "provider": "Electricity Company",
+  "amount": "$75",
+  "country": "US"
+}
+
+IMPORTANT: Output ONLY the JSON, no other text before or after it.
 `
 
 type Message = {
@@ -283,6 +407,137 @@ type Message = {
   text: string
   sender: "user" | "bot"
   timestamp: Date
+  isProgress?: boolean
+}
+
+type WalletActionType = "swap" | "send" | "receive" | "sell" | "buy" | "giftCardTrade" | "billPay"
+
+type PendingAction = {
+  type: WalletActionType
+  params: Record<string, any>
+  confirmationMessage?: string
+}
+
+type WalletActionPayload =
+  | {
+      action: "swap"
+      tokenFrom: string
+      tokenTo: string
+      amount: string
+      chainName: string
+      chainId: number | null
+    }
+  | {
+      action: "send"
+      token: string
+      amount: string
+      receiverAddress: string
+      chainName: string
+      chainId: number | null
+    }
+  | {
+      action: "sell"
+      token: string
+      amount: string
+      chainName: string
+      chainId: number | null
+    }
+  | {
+      action: "buy"
+      token: string
+      fiatAmount?: string
+      cryptoAmount?: string
+      chainName: string
+      chainId: number | null
+    }
+  | {
+      action: "giftCardTrade"
+      brand: string
+      amount: string
+      country?: string | null
+    }
+  | {
+      action: "billPay"
+      provider: string
+      amount: string
+      country?: string | null
+    }
+
+function buildActionPayload(actionType: WalletActionType, params: Record<string, any>): WalletActionPayload | null {
+  const chainName = params.chainName ? normalizeChainName(params.chainName) : undefined
+  const chainId = chainName ? getChainId(chainName) : null
+
+  switch (actionType) {
+    case "swap":
+      if (params.tokenFrom && params.tokenTo && params.amount && chainName) {
+        return {
+          action: "swap",
+          tokenFrom: params.tokenFrom,
+          tokenTo: params.tokenTo,
+          amount: params.amount,
+          chainName,
+          chainId,
+        }
+      }
+      return null
+    case "send":
+      if (params.token && params.amount && params.receiverAddress && chainName) {
+        return {
+          action: "send",
+          token: params.token,
+          amount: params.amount,
+          receiverAddress: params.receiverAddress,
+          chainName,
+          chainId,
+        }
+      }
+      return null
+    case "sell":
+      if (params.token && params.amount && chainName) {
+        return {
+          action: "sell",
+          token: params.token,
+          amount: params.amount,
+          chainName,
+          chainId,
+        }
+      }
+      return null
+    case "buy":
+      if (params.token && (params.fiatAmount || params.cryptoAmount) && chainName) {
+        return {
+          action: "buy",
+          token: params.token,
+          fiatAmount: params.fiatAmount,
+          cryptoAmount: params.cryptoAmount,
+          chainName,
+          chainId,
+        }
+      }
+      return null
+    case "giftCardTrade":
+      if (params.brand && params.amount) {
+        return {
+          action: "giftCardTrade",
+          brand: params.brand,
+          amount: params.amount,
+          country: params.country ?? null,
+        }
+      }
+      return null
+    case "billPay":
+      if (params.provider && params.amount) {
+        return {
+          action: "billPay",
+          provider: params.provider,
+          amount: params.amount,
+          country: params.country ?? null,
+        }
+      }
+      return null
+    default:
+      return null
+  }
 }
 
 export default function HomeScreen() {
@@ -294,21 +549,13 @@ export default function HomeScreen() {
   const [isRecording, setIsRecording] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [isThinking, setIsThinking] = useState(false)
-  const [actionStatus, setActionStatus] = useState<{
-    type: "idle" | "swap" | "send" | "receive" | "sell"
-    message: string
-  }>({ type: "idle", message: "" })
-  const [pendingAction, setPendingAction] = useState<{
-    type: "swap" | "send" | "receive" | "sell"
-    params: any
-    confirmationMessage?: string
-  } | null>(null)
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
   const scrollViewRef = useRef<ScrollView>(null)
   const recordingRef = useRef<Audio.Recording | null>(null)
   const recordingWaveAnim = useRef(new Animated.Value(0))
   const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null)
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const conversionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hasSentWelcomeRef = useRef(false)
 
   const { resolvedTheme } = useTheme()
   const colors = Colors[resolvedTheme]
@@ -343,13 +590,6 @@ export default function HomeScreen() {
       if (typingIntervalRef.current) {
         clearInterval(typingIntervalRef.current)
         typingIntervalRef.current = null
-      }
-      if (conversionTimeoutRef.current) {
-        clearTimeout(conversionTimeoutRef.current)
-        conversionTimeoutRef.current = null
-      }
-      if (actionStatus.type !== "idle") {
-        setActionStatus({ type: "idle", message: "" })
       }
     }
   }, [])
@@ -419,6 +659,52 @@ export default function HomeScreen() {
     [setMessages]
   )
 
+  useEffect(() => {
+    if (hasSentWelcomeRef.current) return
+    hasSentWelcomeRef.current = true
+    startAssistantTypewriter(
+      "Hello! How can I assist you today?\nWould you like to swap, send, receive, buy, sell crypto, trade gift cards, or pay bills?"
+    )
+  }, [startAssistantTypewriter])
+
+  // Handle action from JSON payload (when AI outputs JSON directly)
+  const handleActionFromJSON = useCallback((payload: WalletActionPayload) => {
+    // Log the payload for debugging
+    console.log("Action payload from JSON:", payload)
+
+    // Get action display name
+    const actionName = getActionDisplayName(payload.action)
+    const progressText = `${actionName} in progress`
+
+    // Create progress message with spinner
+    const progressMessageId = `${Date.now()}-progress`
+    const progressMessage: Message = {
+      id: progressMessageId,
+      text: progressText,
+      sender: "bot",
+      timestamp: new Date(),
+      isProgress: true,
+    }
+
+    setMessages((prev) => [...prev, progressMessage])
+
+    // After 3 seconds, remove progress message and show success
+    setTimeout(() => {
+      setMessages((prev) => {
+        // Remove the progress message
+        const filtered = prev.filter((msg) => msg.id !== progressMessageId)
+        // Add success message
+        const successMessage: Message = {
+          id: `${Date.now()}-success`,
+          text: "Operation successful.",
+          sender: "bot",
+          timestamp: new Date(),
+        }
+        return [...filtered, successMessage]
+      })
+    }, 3000)
+  }, [])
+
   const sendAssistantResponse = useCallback(
     async (conversation: Message[]) => {
       if (!openAiApiKey) {
@@ -458,6 +744,16 @@ export default function HomeScreen() {
         setIsThinking(false)
 
         if (assistantText) {
+          // First, check if the response contains JSON (action payload)
+          const actionPayload = extractJSONFromText(assistantText)
+          
+          if (actionPayload) {
+            // AI has output JSON - extract action and show progress
+            // Don't display the JSON text to the user
+            handleActionFromJSON(actionPayload)
+            return
+          }
+          
           // Check if the assistant response is a confirmation message
           const confirmation = isConfirmationMessage(assistantText)
           
@@ -484,10 +780,10 @@ export default function HomeScreen() {
         startAssistantTypewriter("I hit a snag while thinking. Please try again in a moment.")
       }
     },
-    [openAiApiKey, startAssistantTypewriter]
+    [openAiApiKey, startAssistantTypewriter, handleActionFromJSON]
   )
 
-  // Ask AI to judge if user agrees or disagrees with confirmation
+  // AI-based confirmation judge so it can understand each user's natural positive/negative responses
   const judgeConfirmation = useCallback(
     async (userResponse: string, confirmationMessage: string, conversation: Message[]): Promise<boolean> => {
       if (!openAiApiKey) {
@@ -495,7 +791,7 @@ export default function HomeScreen() {
       }
 
       try {
-        // Build context from recent conversation
+        // Use a short window of recent messages as context
         const recentMessages = conversation.slice(-4).map((msg) => ({
           role: msg.sender === "user" ? "user" : "assistant",
           content: msg.text,
@@ -513,30 +809,24 @@ export default function HomeScreen() {
             messages: [
               {
                 role: "system",
-                content: `You are a confirmation judge. Your job is to determine if a user AGREES or DISAGREES with a confirmation request.
+                content: `You are a confirmation judge for a crypto wallet assistant.
+Your job is to decide if the user AGREES or DISAGREES with the confirmation request.
 
-The assistant asked the user to confirm an action with this message:
+Confirmation message:
 "${confirmationMessage}"
 
-The user responded with:
+User reply:
 "${userResponse}"
 
-Your task: Determine if the user AGREES or DISAGREES with the confirmation.
+AGREEMENT examples:
+- yes, yep, yeah, sure, ok, okay, confirm, proceed, right, correct, exactly, that's right, do it, go ahead, let's go, sounds good, fine, etc.
 
-Examples of AGREEMENT:
-- "yes", "yep", "sure", "ok", "okay", "confirm", "proceed", "right", "correct", "exactly", "that's right", "do it", "go ahead", "let's go", etc.
-
-Examples of DISAGREEMENT:
-- "no", "cancel", "wrong", "stop", "don't", "wait", "not yet", etc.
-- Questions or corrections indicate disagreement (they need more info or changes)
+DISAGREEMENT examples:
+- no, nope, cancel, stop, don't, wait, not yet, wrong, or if they ask a question or change details.
 
 Respond with ONLY a JSON object in this exact format:
-{
-  "agrees": true or false,
-  "reason": "brief reason for your judgment"
-}
-
-Nothing else, just the JSON object.`,
+{"agrees": true or false}
+`,
               },
               ...recentMessages,
             ],
@@ -552,7 +842,8 @@ Nothing else, just the JSON object.`,
 
         if (judgmentText) {
           try {
-            const jsonMatch = judgmentText.match(/\{[\s\S]*"agrees"[\s\S]*\}/)
+            // Try to parse a bare JSON object or JSON embedded in text
+            const jsonMatch = judgmentText.match(/\{[\s\S]*\}/)
             if (jsonMatch) {
               const judgment = JSON.parse(jsonMatch[0])
               return judgment.agrees === true
@@ -571,40 +862,21 @@ Nothing else, just the JSON object.`,
     [openAiApiKey]
   )
 
-  // Execute action after positive confirmation
-  const executeAction = useCallback((actionType: "swap" | "send" | "receive" | "sell", params: any) => {
-    // Set appropriate spinner message
-    let spinnerMessage = ""
-    switch (actionType) {
-      case "swap":
-        spinnerMessage = "Swapping..."
-        break
-      case "send":
-        spinnerMessage = "Sending..."
-        break
-      case "receive":
-        spinnerMessage = "Receiving..."
-        break
-      case "sell":
-        spinnerMessage = "Selling..."
-        break
-    }
+  const handleConfirmedAction = useCallback(
+    (actionType: WalletActionType, params: Record<string, any>) => {
+      setPendingAction(null)
+      const payload = buildActionPayload(actionType, params)
 
-    setActionStatus({ type: actionType, message: spinnerMessage })
-    setPendingAction(null)
+      if (!payload) {
+        startAssistantTypewriter("Thanks for confirming! I'm ready to help with the next step.")
+        return
+      }
 
-    // Clear any existing timeout
-    if (conversionTimeoutRef.current) {
-      clearTimeout(conversionTimeoutRef.current)
-    }
-
-    // After 3 seconds, show success message
-    conversionTimeoutRef.current = setTimeout(() => {
-      setActionStatus({ type: "idle", message: "" })
-      startAssistantTypewriter("Operation successful.")
-      conversionTimeoutRef.current = null
-    }, 3000)
-  }, [startAssistantTypewriter])
+      // Use the same handler as JSON-based actions
+      handleActionFromJSON(payload)
+    },
+    [handleActionFromJSON]
+  )
 
   const handleSendMessage = useCallback(async () => {
     const trimmed = chatMessage.trim()
@@ -621,15 +893,18 @@ Nothing else, just the JSON object.`,
     setMessages(updatedConversation)
     setChatMessage("")
 
-    // If there's a pending action, ask AI to judge if user agrees or disagrees
+    // If there's a pending action, check if user agrees or disagrees
     if (pendingAction && pendingAction.confirmationMessage) {
       setIsThinking(true)
       const agrees = await judgeConfirmation(trimmed, pendingAction.confirmationMessage, updatedConversation)
       setIsThinking(false)
 
       if (agrees) {
-        // User agreed, execute the action
-        executeAction(pendingAction.type, pendingAction.params)
+        // User agreed - send their response to AI, which should output JSON
+        // Clear pending action first
+        setPendingAction(null)
+        // Continue conversation - AI will output JSON according to prompt
+        sendAssistantResponse(updatedConversation)
         return
       } else {
         // User disagreed or needs clarification, clear pending action and continue normally
@@ -642,7 +917,7 @@ Nothing else, just the JSON object.`,
 
     // No pending action, continue normally
     sendAssistantResponse(updatedConversation)
-  }, [chatMessage, isThinking, messages, sendAssistantResponse, pendingAction, executeAction, judgeConfirmation])
+  }, [chatMessage, isThinking, messages, sendAssistantResponse, pendingAction, handleConfirmedAction, judgeConfirmation])
 
   const handleMenuPress = useCallback(() => {
     setShowMenuModal(true)
@@ -812,9 +1087,18 @@ Nothing else, just the JSON object.`,
                   : [styles.aiMessageBubble, { backgroundColor: colors.card }],
               ]}
             >
-              <Text style={[styles.messageText, { color: message.sender === "user" ? "#FFFFFF" : colors.text }]}>
-                {message.text}
-              </Text>
+              <View style={styles.messageContent}>
+                <Text style={[styles.messageText, { color: message.sender === "user" ? "#FFFFFF" : colors.text }]}>
+                  {message.text}
+                </Text>
+                {message.isProgress && (
+                  <ActivityIndicator
+                    size="small"
+                    color={message.sender === "user" ? "#FFFFFF" : colors.text}
+                    style={styles.progressSpinner}
+                  />
+                )}
+              </View>
             </View>
             {/* {message.sender === "user" && (
               <View style={styles.avatarContainer}>
@@ -823,14 +1107,6 @@ Nothing else, just the JSON object.`,
             )} */}
           </View>
         ))}
-        {actionStatus.type !== "idle" && (
-          <View style={styles.conversionStatusRow}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={[styles.conversionStatusText, { color: colors.text }]}>
-              {actionStatus.message}
-            </Text>
-          </View>
-        )}
         {isThinking && <ThinkingIndicator color={colors.textSecondary} />}
       </ScrollView>
 
@@ -1048,11 +1324,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#2A2A2A",
     borderTopRightRadius: 20,
   },
+  messageContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   messageText: {
     fontSize: 13,
     lineHeight: 19,
     fontWeight: "500",
     color: "#FFFFFF",
+  },
+  progressSpinner: {
+    marginLeft: 4,
   },
   avatarContainer: {
     width: 40,
@@ -1159,16 +1443,5 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-  },
-  conversionStatusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-  conversionStatusText: {
-    fontSize: 14,
-    fontWeight: "500",
   },
 })
